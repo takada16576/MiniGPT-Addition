@@ -1,0 +1,14 @@
+```gitignore
+__pycache__/
+*.pyc
+
+.venv/
+venv/
+
+*.pt
+*.pth
+
+.idea/
+.vscode/
+
+.DS_Store
