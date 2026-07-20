@@ -11,6 +11,7 @@ venv/
 
 *.pt
 data/*.txt
+!data/.gitkeep
 
 .idea/
 .vscode/
