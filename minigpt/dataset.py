@@ -6,9 +6,9 @@ import os, sys
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append('.')
 
-with open("data/train.txt", "r", encoding="utf-8") as f:
+with open("data/train_add.txt", "r", encoding="utf-8") as f:
     raw_text = []
-    for _ in range(9000):
+    for _ in range(9000*2):
         temp = f.readline()
         raw_text.append(temp[:-1])
 

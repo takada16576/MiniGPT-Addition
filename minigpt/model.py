@@ -71,9 +71,13 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout_rate)
 
         # mask
+        #self.register_buffer(
+        #    "mask",
+        #    torch.tril(torch.ones(context_length, context_length), diagonal=1)
+        #)
         self.register_buffer(
             "mask",
-            torch.tril(torch.ones(context_length, context_length), diagonal=1)
+            torch.tril(torch.ones(context_length, context_length), diagonal=0)
         )
 
     def forward(self, x):   # x: (B, C, E)  # (batch_size, context_length, embed_dim)
@@ -145,15 +149,7 @@ class MLP(nn.Module):
         return self.layers(x)
 #--------------------------------------------------
 
-GPT_CONFIG = {
-    "vocab_size": 13,
-    "context_length": 9,
-    "embed_dim": 32,
-    "n_heads": 2,
-    "n_layers": 12,
-    "dropout_rate": 0.1,
-    #"qkv_bias": False
-}
+
 class TransformerBlock(nn.Module):
     def __init__(self, cfg):
         super().__init__()
@@ -175,6 +171,16 @@ class TransformerBlock(nn.Module):
         x = x + self.drop(self.mlp(self.ln2(x)))
         return x
 
+#--------------------------------------------------
+GPT_CONFIG = {
+    "vocab_size": 15,       # vocab_size = len(all_words)
+    "context_length": 12,   # "12+34=046"の時は9、"+12++34=+046"の時は12
+    "embed_dim": 128,       # 32 -> 64 -> 96 -> 128
+    "n_heads": 2,           # 2 -> 1
+    "n_layers": 12,
+    "dropout_rate": 0.1,
+    #"qkv_bias": False
+}
 #--------------------------------------------------
 
 class GPT(nn.Module):

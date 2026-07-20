@@ -18,13 +18,15 @@ from minigpt.dataset import GPTDataset, DataLoader, raw_text
 tokenizer = SimpleTokenizer(vocab)
 # 設定
 device = get_device()
-model_save_path = 'miniGPT/model_pretrain.pt'
+#model_save_path = 'MiniGPT-Addition/model_pretrain_add.pt'
+model_save_path = 'minigpt/model_add.pt'
+
 
 # ハイパーパラメータ
-learning_rate = 3e-4
+learning_rate = 1e-4    # 3e-4 -> 1e-4
 #max_iters = 20000
 #max_iters = 22500   # ステップで1epoch: 2250 (9000問 / 4 = 2250)　で。10epoch=22500
-num_epochs = 10
+num_epochs = 10     # 10->20
 
 # データ準備
 dataset = GPTDataset(raw_text, tokenizer)
@@ -43,9 +45,10 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 losses = []
 
 global_step = 0
-epoch_loss = 0
+#epoch_loss = 0
 
 for epoch in range(num_epochs):
+    epoch_loss = 0.0
 
     for batch_x, batch_y in dataloader:
         batch_x, batch_y = batch_x.to(device), batch_y.to(device)
@@ -94,3 +97,10 @@ plt.show()
 
 #############################
 torch.save(model.state_dict(), model_save_path)
+from minigpt.generate import generate
+print(generate(model, tokenizer, "56+99", 4))
+#pretrained_path = None
+#if pretrained_path:
+#    model.load_state_dict(
+#        torch.load(pretrained_path, map_location=device)
+#    )
