@@ -7,23 +7,26 @@ from minigpt.tokenizer import SimpleTokenizer, vocab
 from minigpt.model import GPT, GPT_CONFIG
     
 #--------------------------------------------------
-#inputs = "3+5"      # +03+05=
-#print(f"inputs: {inputs}")
+def split_expression(expr, operators="+-*"):
+    for i in range(1, len(expr)):
+        if expr[i] in operators:
+            return expr[:i], expr[i], expr[i+1:]
+    return None
 
 def normalize_prompt(prompt):
     try:
-        left, right = prompt.split('+')
+        left, op, right = split_expression(prompt)
+        #print(left, op, right)
 
-        a = int(left)
-        b = int(right)
+        a, b = int(left), int(right)
 
         if not (-99 <= a <= 99):
             return None
         if not (-99 <= b <= 99):
             return None
 
-        #return f"+{a:02d}+{b:02d}="
-        return f"{format_number(a,2)}+{format_number(b,2)}="
+        #return f"{format_number(a,2)}-{format_number(b,2)}="
+        return f"{format_number(a,2)}{op}{format_number(b,2)}="
 
     except Exception:
         return None
@@ -55,6 +58,6 @@ def generate(model, tokenizer, prompt, max_new_tokens):
 
     # デコード
     generated_text = tokenizer.decode(ids[0].tolist())
-    print("repr(generated_text):", repr(generated_text))
+    #print("repr(generated_text):", repr(generated_text))
     return generated_text
 

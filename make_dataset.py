@@ -33,10 +33,14 @@ def make_question_mul():
 
 train = []
 
-for _ in range(9000*2):
-    train.append(make_question_add())
+for i in range(9000*2):
+    if i < 9000:
+        train.append(make_question_add())
+    else:
+        train.append(make_question_sub())
 
-with open("train_add.txt", "w") as f:
+#with open("train_add.txt", "w") as f:
 #with open("train_sub.txt", "w") as f:
+with open("train_add_sub.txt", "w") as f:
     for line in train:
         f.write(line + "\n")

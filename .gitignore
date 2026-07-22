@@ -20,3 +20,6 @@ data/*.txt
 
 test_*.py
 train_*.txt
+
+add_errors.txt
+sub_errors.txt

@@ -16,19 +16,15 @@ from minigpt.dataset import GPTDataset, DataLoader, raw_text
 ######################################################################
 
 tokenizer = SimpleTokenizer(vocab)
-# 設定
+
 device = get_device()
-#model_save_path = 'MiniGPT-Addition/model_pretrain_add.pt'
-model_save_path = 'minigpt/model_add.pt'
 
 
-# ハイパーパラメータ
+# ===== ハイパーパラメータ =====
 learning_rate = 1e-4    # 3e-4 -> 1e-4
-#max_iters = 20000
-#max_iters = 22500   # ステップで1epoch: 2250 (9000問 / 4 = 2250)　で。10epoch=22500
 num_epochs = 10     # 10->20
 
-# データ準備
+# ===== データ準備 =====
 dataset = GPTDataset(raw_text, tokenizer)
 dataloader = DataLoader(
     dataset,
@@ -38,14 +34,27 @@ dataloader = DataLoader(
     #num_workers=0
 )
 
-# モデル、オプティマイザ
-model = GPT(GPT_CONFIG).to(device)
+# ===== モデル =====
+model = GPT(GPT_CONFIG)
+
+#pretrained_path = None
+pretrained_path = "minigpt/model_add.pt"
+
+if pretrained_path is not None:
+    model.load_state_dict(
+        torch.load(pretrained_path, map_location=device)
+    )
+
+model.to(device)
+
+# ===== 学習 =====
 model.train()
+
+# オプティマイザ
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 losses = []
 
 global_step = 0
-#epoch_loss = 0
 
 for epoch in range(num_epochs):
     epoch_loss = 0.0
@@ -68,7 +77,6 @@ for epoch in range(num_epochs):
 
         losses.append(loss.item())
         # 進捗表示
-        #pbar.set_postfix(loss=f"{loss.item():.4f}")
         global_step += 1
         
         if global_step % 50 == 0:
@@ -77,14 +85,13 @@ for epoch in range(num_epochs):
                 f"Train loss {loss.item():.4f}"
             )
         
-    #pbar.set_postfix(loss=f"{loss.item():.4f}")
     epoch_loss += loss.item()
     print(
         f"Epoch {epoch+1}: "
         f"Loss={epoch_loss/len(dataloader):.4f}"
     )
 
-##########################
+# ===== グラフ描画 =====
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(10, 6))
@@ -95,12 +102,6 @@ plt.grid(True)
 plt.savefig('loss_pretrain.png')
 plt.show()
 
-#############################
+# ===== 保存 =====
+model_save_path = 'minigpt/model_add_sub.pt'
 torch.save(model.state_dict(), model_save_path)
-from minigpt.generate import generate
-print(generate(model, tokenizer, "56+99", 4))
-#pretrained_path = None
-#if pretrained_path:
-#    model.load_state_dict(
-#        torch.load(pretrained_path, map_location=device)
-#    )

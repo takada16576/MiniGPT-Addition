@@ -14,16 +14,9 @@ from minigpt.generate import generate
 import os, sys
 #os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append('.')
-model_save_path = 'minigpt/model_add.pt'
+#model_save_path = 'minigpt/model_add.pt'
+model_save_path = 'minigpt/model_add_sub.pt'
 device = get_device()
-#prompt = "17+28="
-#prompt = "89+68="
-#prompt = "03+58="
-#prompt = "30+58="
-#prompt = "99+99="
-#prompt = "00+00="
-#prompt = "12+34="
-#prompt = "99+99=+198"
 max_new_tokens = 4
 
 # モデルとトークナイザ
@@ -34,10 +27,10 @@ model.load_state_dict(
 tokenizer = SimpleTokenizer(vocab)
 
 # テキスト生成
-print("「整数の足し算」を学習したミニ生成AIです。\n加算式(例：'12+34')を入力してください。'EXIT'で終了")
+print("「2桁整数の足し算と引き算」を学習したミニ生成AIです。\n式を入力してください。(例：'12+34') 'EXIT'で終了")
 while True:
     inputs = input("Input: ")
-    if inputs == "EXIT":
+    if (inputs == "EXIT") or (inputs == "exit"):
         break
     
     generated_text = generate(
