@@ -1,34 +1,96 @@
 # MiniGPT Addition
 
 > このプロジェクトはGPTの学習を目的とした教育・実験用実装です。
-> 高い加算精度よりも、Transformerの仕組みを理解することを重視しています。
+> Transformerの仕組みを理解することを重視しています。
+
+## Results
+
+| Operation | Accuracy |
+|-----------|----------:|
+| Addition | 100.00% |
+| Subtraction | 100.00% |
+| Multiplication | 100.00% |
+
+Total: 118,803 / 118,803 correct (100.00%)
 
 ## プロジェクトの目的
 
-本プロジェクトは、GPTの仕組みを理解することを目的として、PyTorchのみを用いて「2桁整数の足し算と引き算」を学習する小規模なGPTを実装したものです。
+本プロジェクトは、GPTの仕組みを理解することを目的として、PyTorchのみを用いて「2桁整数の足し算と引き算と掛け算」を学習する小規模なGPTを実装したものです。
 
 ## 特徴
 
 - シンプルなGPTの実装（マルチヘッドAttention）
 - 文字単位のトークナイザー
 - Transformerデコーダー
-- 加算データセットでの学習
+- 加減乗算データセットでの学習
 - 貪欲法（Greedy Decoding）によるテキスト生成
-- 加算モデルからContinue Pretrainingを行い、減算を追加学習
+- 加減乗算モデルからContinue Pretrainingを行い、補正データを追加学習
 
 
 ## 学習手順
 
-1. Generate the addition dataset.
-2. Train the addition model.
-3. Generate the subtraction dataset.
-4. Continue pretraining from the addition model.
+1. 加減乗算の学習データをまとめて混合データを作成(make_dataset.py)
+   datasetをtotal=199*199*3で生成(minigpt/dataset.py)
+2. 混合データ(train_mix.txt)を30epochで学習(train.py)
+　　# ===== ハイパーパラメータ =====
+    learning_rate = 1e-4
+    num_epochs = 30
+3. モデルを評価して加減乗算のエラー抽出(test_add_sub_mul.py)
+4. エラー補正データを作成(make_dataset.py)
+5. エラー補正データ(train_mix_errors.txt)を1epochで再学習(train.py)
+   Continue pretraining
+　　# ===== ハイパーパラメータ =====
+    learning_rate = 1e-5
+    num_epochs = 1
+6. モデルを評価して乗算エラー抽出(test_add_sub_mul.py)
+7. 乗算エラー補正データを作成(make_dataset.py)
+8. 乗算エラー補正データ(train_mix_errors.txt)を1epochで再学習(train.py)
+　　Continue pretraining
+　　# ===== ハイパーパラメータ =====
+    learning_rate = 1e-5
+    num_epochs = 1
+9. モデルを評価して正解率100%(エラー0)を確認(test_add_sub_mul.py)
+  % python test_eval_add_sub_mul.py
+  Addition   : 100.00%
+  Add Errors : 0
+  Add Numeric Errors : 0
+  Add Format Errors : 0
+  Subtraction   : 100.00%
+  Sub Errors : 0
+  Sub Numeric Errors : 0
+  Sub Format Errors : 0
+  Multiplication   : 100.00%
+  Mul Errors : 0
+  Mul Numeric Errors : 0
+  Mul Format Errors : 0
 
-## Full evaluation (79,202 test cases)
 
-- Addition: 39,601 problems → **99.81%**
-- Subtraction: 39,601 problems → **99.93%**
-- Overall: 79,202 problems → **99.87%**
+## Model configuration
+
+```python
+GPT_CONFIG = {
+    "vocab_size": 15,
+    "context_length": 12,
+    "embed_dim": 256,
+    "n_heads": 4,
+}
+```
+
+## Full evaluation
+
+A tiny GPT model that learns
+addition, subtraction, and multiplication
+for all integer pairs in [-99, 99].
+
+Final evaluation:
+
+| Operation | Accuracy |
+|-----------|----------:|
+| Addition | 100.00% |
+| Subtraction | 100.00% |
+| Multiplication | 100.00% |
+
+Total: 118,803 / 118,803 correct (100.00%)
 
 
 ## Observed failure patterns
@@ -44,7 +106,7 @@
 ```
 **出力**
 ```
-03+58=061
+03+58=+0061
 ```
 
 ## 実行例(2桁整数の減算)
@@ -54,7 +116,17 @@
 ```
 **出力**
 ```
-30-50=-020
+30-50=-0020
+```
+
+## 実行例(2桁整数の乗算)
+**入力**
+```
+30*50
+```
+**出力**
+```
+30*50=+1500
 ```
 
 （inference.py が '=' を自動で付けています）
@@ -80,9 +152,9 @@ pip install -r requirements.txt
 python make_dataset.py
 ```
 
-生成された `train_add_sub.txt` を `data` ディレクトリに配置します。
+生成された `train_mix.txt` を `data` ディレクトリに配置します。
 
-その後、学習を開始します。
+その後、学習を開始します。（詳細は学習手順を参照）
 
 ```bash
 python train.py
@@ -94,23 +166,29 @@ python train.py
 python inference.py
 ```
 
+## 評価
+
+```bash
+python test_eval_add_sub_mul.py
+```
+
 ## ステータス
 
 ⚠️ 本プロジェクトは現在活発に開発中です。
 
 最初のリリース（v0.1.0）は実験的な実装です。
-既知の問題：
-- 乱数シードによっては、モデルが収束しない場合があります。
-- 演算精度については、現在も改善を進めています。
-
+- v0.1.0では２桁加減乗算(-99～99)で全問正解を達成。
+- 今後は3桁演算やモデル分析を進める予定。
 
 ## 学習時間の目安
 
-参考環境（Windows 11 / GTX 1660 Ti）では、加算モデルの学習に約46分かかりました。
+参考環境（Windows 11 / GTX 1660 Ti）
 
+- 加算モデル: 約46分
+- 加減乗算混合モデル(30 epoch): 約9時間
 
-## 今後の予定
+## Observed failure patterns during development
 
-- 掛け算への対応
-- 演算精度の向上
-- Transformerの計算特性の分析
+- Sign inversion when the result magnitude is very small (especially ±1)
+- Errors involving carry into the hundreds place (e.g. 103 → 093)
+- Multiplication errors concentrated at ±20, ±40, ±80, ±100 offsets

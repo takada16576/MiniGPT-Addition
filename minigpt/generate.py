@@ -43,6 +43,8 @@ def generate(model, tokenizer, prompt, max_new_tokens):
     # プロンプトをトークン化
     device = next(model.parameters()).device
     ids = tokenizer.encode(prompt)[:-1]
+    #print(f"ids:{ids}")
+    #print(len(ids))
     ids = torch.tensor([ids], dtype=torch.long, device=device)
 
     eos_id = tokenizer.str_to_int["<EOS>"]

@@ -53,7 +53,7 @@ class Attention(nn.Module):
         return output
     
 #--------------------------------------------------
-class MultiHeadAttention(nn.Module):
+class MultiHeadAttentionV1(nn.Module):
     def __init__(self, embed_dim, key_dim, context_length, dropout_rate, n_heads):
         super().__init__()
         assert (embed_dim % n_heads == 0), "embed_dim must be divisible by n_heads"
@@ -82,6 +82,7 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, x):   # x: (B, C, E)  # (batch_size, context_length, embed_dim)
         B, C, E = x.shape
+        #print(f"C = {C}")
         H, D = self.n_heads, self.head_dim
 
         # Q, K, V の計算.    (B, C, E)@(E, H*D) => (B, C, H*D)
@@ -107,6 +108,166 @@ class MultiHeadAttention(nn.Module):
 
         # Attention重み
         attn_weights = F.softmax(attn_scores, dim=-1)     # (B, H, C, C)
+
+        attn_weights = self.dropout(attn_weights)
+        context = torch.matmul(attn_weights, V)   # (B, H, C, C)@(B, H, C, D) -> (B, H, C, D)
+
+        # ヘッドの結合と出力変換
+        context = context.transpose(1, 2).contiguous() # (B, C, H, D)
+        context = context.reshape(B, C, H*D)          # (B. C, H*D)
+        output = self.W_o(context)           # (B, C, H*D)@(H*D, E) -> (B, C, E)
+        #print("output.shape:", output.shape)    # output.shape: torch.Size([4, 9, 32])
+        return output
+
+#--------------------------------------------------
+class MultiHeadAttentionV2(nn.Module):
+    def __init__(self, embed_dim, key_dim, context_length, dropout_rate, n_heads):
+        super().__init__()
+        assert (embed_dim % n_heads == 0), "embed_dim must be divisible by n_heads"
+        self.key_dim = key_dim
+        self.n_heads = n_heads
+        self.head_dim = embed_dim // n_heads
+        E, H, D = embed_dim, n_heads, self.head_dim
+        # Q, K, Vの変換行列   nn.Linear は最後の次元だけに作用します
+        self.W_q = nn.Linear(E, H*D, bias=False)    # (E, H*D) H*D 次元ベクトル
+        self.W_k = nn.Linear(E, H*D, bias=False)    # (E, H*D) H*D 次元ベクトル
+        self.W_v = nn.Linear(E, H*D, bias=False)    # (E, H*D) H*D 次元ベクトル
+        self.W_o = nn.Linear(H*D, E, bias=False)    # (H*D, E) E 次元ベクトル
+
+        # Dropoutを追加
+        self.dropout = nn.Dropout(dropout_rate)
+
+        # mask
+        #self.register_buffer(
+        #    "mask",
+        #    torch.tril(torch.ones(context_length, context_length), diagonal=1)
+        #)
+        self.register_buffer(
+            "mask",
+            torch.tril(torch.ones(context_length, context_length), diagonal=0)
+        )
+
+    def forward(self, x):   # x: (B, C, E)  # (batch_size, context_length, embed_dim)
+        B, C, E = x.shape
+        #print(f"C = {C}")
+        H, D = self.n_heads, self.head_dim
+
+        # Q, K, V の計算.    (B, C, E)@(E, H*D) => (B, C, H*D)
+        Q = self.W_q(x)     # Q: (B, C, H*D)  # (batch_size, context_length, n_head*key_dim)
+        K = self.W_k(x)     # K: (B, C, H*D)  # (batch_size, context_length, n_head*key_dim)
+        V = self.W_v(x)     # V: (B, C, H*D)  # (batch_size, context_length, n_head*key_dim)
+
+        # 各ヘッドに分割して並べ替え
+        Q = Q.reshape(B, C, H, D).transpose(1, 2)   # (B, H, C, D)
+        K = K.reshape(B, C, H, D).transpose(1, 2)   # (B, H, C, D)
+        V = V.reshape(B, C, H, D).transpose(1, 2)   # (B, H, C, D)
+
+        # Attention重みの計算
+        K_t = K.transpose(-2, -1)       # (B, H, D, C)
+        attn_scores = torch.matmul(Q, K_t)   # (B, H, C, D)@(B, H, D, C) -> (B, H, C, C)
+        attn_scores = attn_scores / (D ** 0.5)
+
+        # マスクの適用
+        attn_scores = attn_scores.masked_fill(
+            self.mask[:C, :C] == 0,
+            float("-inf")
+        )
+
+        # Softmax前のスコアを保存
+        self.last_attn_scores = attn_scores.detach().cpu()
+
+        # Attention重み
+        attn_weights = F.softmax(attn_scores, dim=-1)     # (B, H, C, C)
+
+        # Softmax後の重みを保存（可視化用）
+        self.last_attn_weights = attn_weights.detach().cpu()
+
+        if not hasattr(self, "attn_history"):
+            self.attn_history = []
+        self.attn_history.append(attn_weights.detach().cpu())
+
+        attn_weights = self.dropout(attn_weights)
+        context = torch.matmul(attn_weights, V)   # (B, H, C, C)@(B, H, C, D) -> (B, H, C, D)
+
+        # ヘッドの結合と出力変換
+        context = context.transpose(1, 2).contiguous() # (B, C, H, D)
+        context = context.reshape(B, C, H*D)          # (B. C, H*D)
+        output = self.W_o(context)           # (B, C, H*D)@(H*D, E) -> (B, C, E)
+        #print("output.shape:", output.shape)    # output.shape: torch.Size([4, 9, 32])
+        return output
+
+#--------------------------------------------------
+class MultiHeadAttentionV3(nn.Module):
+    def __init__(self, embed_dim, key_dim, context_length, dropout_rate, n_heads):
+        super().__init__()
+        assert (embed_dim % n_heads == 0), "embed_dim must be divisible by n_heads"
+        self.key_dim = key_dim
+        self.n_heads = n_heads
+        self.head_dim = embed_dim // n_heads
+        E, H, D = embed_dim, n_heads, self.head_dim
+        # Q, K, Vの変換行列   nn.Linear は最後の次元だけに作用します
+        self.W_q = nn.Linear(E, H*D, bias=False)    # (E, H*D) H*D 次元ベクトル
+        self.W_k = nn.Linear(E, H*D, bias=False)    # (E, H*D) H*D 次元ベクトル
+        self.W_v = nn.Linear(E, H*D, bias=False)    # (E, H*D) H*D 次元ベクトル
+        self.W_o = nn.Linear(H*D, E, bias=False)    # (H*D, E) E 次元ベクトル
+        
+        # Dropoutを追加
+        self.dropout = nn.Dropout(dropout_rate)
+
+        self.register_buffer(
+            "mask",
+            torch.tril(torch.ones(context_length, context_length), diagonal=0)
+        )
+
+        self.use_fixed_attention=False
+
+
+    def forward(self, x):   # x: (B, C, E)  # (batch_size, context_length, embed_dim)
+        B, C, E = x.shape
+        #print(f"C = {C}")
+        H, D = self.n_heads, self.head_dim
+
+        # Q, K, V の計算.    (B, C, E)@(E, H*D) => (B, C, H*D)
+        Q = self.W_q(x)     # Q: (B, C, H*D)  # (batch_size, context_length, n_head*key_dim)
+        K = self.W_k(x)     # K: (B, C, H*D)  # (batch_size, context_length, n_head*key_dim)
+        V = self.W_v(x)     # V: (B, C, H*D)  # (batch_size, context_length, n_head*key_dim)
+
+        # 各ヘッドに分割して並べ替え
+        Q = Q.reshape(B, C, H, D).transpose(1, 2)   # (B, H, C, D)
+        K = K.reshape(B, C, H, D).transpose(1, 2)   # (B, H, C, D)
+        V = V.reshape(B, C, H, D).transpose(1, 2)   # (B, H, C, D)
+
+        # --------------------------------------------------------------
+        if self.use_fixed_attention == True:
+            # 固定Attention
+            # -------------------------------
+            # 固定Attention（一様分布）
+            # -------------------------------
+            mask = self.mask[:C, :C].float()      # (C, C)
+
+            # 各行が1になるように正規化
+            attn_weights = mask / mask.sum(dim=-1, keepdim=True)
+
+            # (1,1,C,C) -> (B,H,C,C)
+            attn_weights = attn_weights.unsqueeze(0).unsqueeze(0)
+            attn_weights = attn_weights.expand(B, H, C, C)
+        else:
+            # 通常のAttention
+            # Attention重みの計算
+            K_t = K.transpose(-2, -1)       # (B, H, D, C)
+            attn_scores = torch.matmul(Q, K_t)   # (B, H, C, D)@(B, H, D, C) -> (B, H, C, C)
+            attn_scores = attn_scores / (D ** 0.5)
+            # マスクの適用
+            attn_scores = attn_scores.masked_fill(
+                self.mask[:C, :C] == 0,
+                float("-inf")
+            )
+            # Attention重み
+            attn_weights = F.softmax(attn_scores, dim=-1)     # (B, H, C, C)
+        # --------------------------------------------------------------
+
+        
+
         attn_weights = self.dropout(attn_weights)
         context = torch.matmul(attn_weights, V)   # (B, H, C, C)@(B, H, C, D) -> (B, H, C, D)
 
@@ -153,7 +314,7 @@ class MLP(nn.Module):
 class TransformerBlock(nn.Module):
     def __init__(self, cfg):
         super().__init__()
-        self.att = MultiHeadAttention(
+        self.att = MultiHeadAttentionV3(
             embed_dim=cfg["embed_dim"],
             key_dim=cfg["embed_dim"],
             context_length=cfg["context_length"],
@@ -174,9 +335,9 @@ class TransformerBlock(nn.Module):
 #--------------------------------------------------
 GPT_CONFIG = {
     "vocab_size": 15,       # vocab_size = len(all_words)
-    "context_length": 12,   # "12+34=046"の時は9、"+12++34=+046"の時は12
-    "embed_dim": 128,       # 32 -> 64 -> 96 -> 128
-    "n_heads": 2,           # 2 -> 1
+    "context_length": 13,   # "12+34=046"の時は9、"+12++34=+046"の時は12、"+12*+34=+0408"の時は13
+    "embed_dim": 256,       # 32 -> 64 -> 96 -> 128 -> 192 -> 256
+    "n_heads": 4,           # 2 -> 1 -> 3
     "n_layers": 12,
     "dropout_rate": 0.1,
     #"qkv_bias": False

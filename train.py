@@ -21,8 +21,8 @@ device = get_device()
 
 
 # ===== ハイパーパラメータ =====
-learning_rate = 1e-4    # 3e-4 -> 1e-4
-num_epochs = 10     # 10->20
+learning_rate = 1e-4    # 1e-4 -> 1e-5
+num_epochs = 30     # 10 -> 10 -> 10 -> 1
 
 # ===== データ準備 =====
 dataset = GPTDataset(raw_text, tokenizer)
@@ -37,8 +37,13 @@ dataloader = DataLoader(
 # ===== モデル =====
 model = GPT(GPT_CONFIG)
 
-#pretrained_path = None
-pretrained_path = "minigpt/model_add.pt"
+pretrained_path = None
+#pretrained_path = "minigpt/model_mix_256_4_ep10.pt"
+#pretrained_path = "minigpt/model_mix_256_4_ep20.pt"
+#pretrained_path = "minigpt/model_mix_256_4_ep30.pt"
+#pretrained_path = "minigpt/model_mix_256_4_ep30_retrain.pt"
+#pretrained_path = "minigpt/model_mix_256_4_ep30_retrain2.pt"
+
 
 if pretrained_path is not None:
     model.load_state_dict(
@@ -103,5 +108,11 @@ plt.savefig('loss_pretrain.png')
 plt.show()
 
 # ===== 保存 =====
-model_save_path = 'minigpt/model_add_sub.pt'
+#model_save_path = 'minigpt/model_mix_256_4_ep10.pt'
+#model_save_path = 'minigpt/model_mix_256_4_ep20.pt'
+#model_save_path = 'minigpt/model_mix_256_4_ep30.pt'
+#model_save_path = 'minigpt/model_mix_256_4_ep30_retrain.pt'
+#model_save_path = 'minigpt/model_mix_256_4_ep30_retrain2.pt' # 
+# 　　　　　　　　　=> 正答率100%になったので、model_mix_256_4_100.ptに名称変更
+model_save_path = 'minigpt/model_mix_256_4_ep30_v1.pt'
 torch.save(model.state_dict(), model_save_path)
