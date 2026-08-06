@@ -35,9 +35,12 @@ total = 199*199*3
 
 raw_text = random.sample(train_text, total)
 
-#with open("data/train_mix_errors_26.txt", "r", encoding="utf-8") as f:
-#    raw_text += [line.rstrip("\n") for line in f]
-
+errors_flag = False
+if errors_flag:
+    with open("data/train_mix_errors.txt", "r", encoding="utf-8") as f:
+        raw_text += [line.rstrip("\n") for line in f]
+    with open("data/train_mix_errors_26.txt", "r", encoding="utf-8") as f:
+        raw_text += [line.rstrip("\n") for line in f]
 
 random.shuffle(raw_text)
 

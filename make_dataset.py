@@ -91,27 +91,29 @@ with open('train_add_sub.txt', 'r', encoding='utf-8') as f1, \
     outfile.write(f2.read())
 
 #################################################################################
+errors_flag = False
 # errors.txtからテストデータを作成するスクリプト
 from minigpt.utils import extract_errors
 
-extract_errors('add_errors.txt', '+', 'train_add_errors.txt')
-extract_errors('sub_errors.txt', '-', 'train_sub_errors.txt')
-extract_errors('mul_errors.txt', '*', 'train_mul_errors.txt')
+if errors_flag:
+    extract_errors('add_errors.txt', '+', 'train_add_errors.txt')
+    extract_errors('sub_errors.txt', '-', 'train_sub_errors.txt')
+    extract_errors('mul_errors.txt', '*', 'train_mul_errors.txt')
 
-# 三つのファイルを開いて、新しいファイルに書き込む
-with open('train_add_errors.txt', 'r', encoding='utf-8') as f1, \
-     open('train_sub_errors.txt', 'r', encoding='utf-8') as f2, \
-     open('train_mul_errors.txt', 'r', encoding='utf-8') as f3, \
-     open('train_mix_errors.txt', 'w', encoding='utf-8') as outfile:
+    # 三つのファイルを開いて、新しいファイルに書き込む
+    with open('train_add_errors.txt', 'r', encoding='utf-8') as f1, \
+         open('train_sub_errors.txt', 'r', encoding='utf-8') as f2, \
+         open('train_mul_errors.txt', 'r', encoding='utf-8') as f3, \
+         open('train_mix_errors.txt', 'w', encoding='utf-8') as outfile:
     
-    # 1つ目のファイルの内容を書き込む
-    outfile.write(f1.read())
-    outfile.write('\n')
-    # 2つ目のファイルの内容を書き込む
-    outfile.write(f2.read())
-    outfile.write('\n')
-    # 3つ目のファイルの内容を書き込む
-    outfile.write(f3.read())
+        # 1つ目のファイルの内容を書き込む
+        outfile.write(f1.read())
+        outfile.write('\n')
+        # 2つ目のファイルの内容を書き込む
+        outfile.write(f2.read())
+        outfile.write('\n')
+        # 3つ目のファイルの内容を書き込む
+        outfile.write(f3.read())
 
 #################################################################################
 # 答えが -5～+5 の加算・減算問題
@@ -148,8 +150,8 @@ for a in range(-99, 100):
             )
             train_data.append(expr)
 
-with open("train_sign_fix.txt", "w", encoding="utf-8") as f:
-    for line in train_data:
-        f.write(line + "\n")
+#with open("train_sign_fix.txt", "w", encoding="utf-8") as f:
+#    for line in train_data:
+#        f.write(line + "\n")
 
-print(f"count={len(train_data)}")
+#print(f"count={len(train_data)}")

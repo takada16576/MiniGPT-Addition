@@ -5,11 +5,11 @@
 
 ## Results
 
-| Operation | Accuracy |
-|-----------|----------:|
-| Addition | 100.00% |
-| Subtraction | 100.00% |
-| Multiplication | 100.00% |
+| Operation      | Accuracy  |
+|----------------|----------:|
+| Addition       | 100.00%   |
+| Subtraction    | 100.00%   |
+| Multiplication | 100.00%   |
 
 Total: 118,803 / 118,803 correct (100.00%)
 
@@ -29,23 +29,28 @@ Total: 118,803 / 118,803 correct (100.00%)
 
 ## 学習手順
 
-1. 加減乗算の学習データをまとめて混合データを作成(make_dataset.py)
-   datasetをtotal=199*199*3で生成(minigpt/dataset.py)
+1. 加減乗算の学習データをまとめて混合データを作成
+    make_dataset.pyで、"errors_flag = False"にする
+    minigpt/dataset.pyで、datasetをtotal=199*199*3で生成。"errors_flag = False"にする
 2. 混合データ(train_mix.txt)を30epochで学習(train.py)
 　　# ===== ハイパーパラメータ =====
     learning_rate = 1e-4
     num_epochs = 30
 3. モデルを評価して加減乗算のエラー抽出(test_add_sub_mul.py)
-4. エラー補正データを作成(make_dataset.py)
-5. エラー補正データ(train_mix_errors.txt)を1epochで再学習(train.py)
-   Continue pretraining
+4. エラー補正データを作成
+　　make_dataset.pyで、"errors_flag = True"にする
+5. エラー補正データ(train_mix_errors.txt)を1epochで再学習
+    minigpt/dataset.pyで、datasetをtotal=5000で生成。"errors_flag = True"にする
+    train.pyで、Continue pretraining
 　　# ===== ハイパーパラメータ =====
     learning_rate = 1e-5
     num_epochs = 1
 6. モデルを評価して乗算エラー抽出(test_add_sub_mul.py)
-7. 乗算エラー補正データを作成(make_dataset.py)
-8. 乗算エラー補正データ(train_mix_errors.txt)を1epochで再学習(train.py)
-　　Continue pretraining
+7. 乗算エラー補正データを作成
+    make_dataset.pyで、"errors_flag = True"にする
+8. 乗算エラー補正データ(train_mix_errors.txt)を1epochで再学習
+    minigpt/dataset.pyで、datasetをtotal=5000で生成。"errors_flag = True"にする
+    train.pyで、Continue pretraining
 　　# ===== ハイパーパラメータ =====
     learning_rate = 1e-5
     num_epochs = 1
@@ -84,11 +89,11 @@ for all integer pairs in [-99, 99].
 
 Final evaluation:
 
-| Operation | Accuracy |
-|-----------|----------:|
-| Addition | 100.00% |
-| Subtraction | 100.00% |
-| Multiplication | 100.00% |
+| Operation      | Accuracy  |
+|----------------|----------:|
+| Addition       | 100.00%   |
+| Subtraction    | 100.00%   |
+| Multiplication | 100.00%   |
 
 Total: 118,803 / 118,803 correct (100.00%)
 
@@ -138,10 +143,20 @@ Total: 118,803 / 118,803 correct (100.00%)
 - PyTorch
 
 
-## 事前準備
+## 事前準備(環境構築手順)
 
 ```bash
 pip install -r requirements.txt
+```
+
+Macの場合
+```bash
+pip install torch torchvision torchaudio
+```
+
+Windows CUDAの場合
+```bash
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 ```
 
 ## 学習
@@ -185,7 +200,7 @@ python test_eval_add_sub_mul.py
 参考環境（Windows 11 / GTX 1660 Ti）
 
 - 加算モデル: 約46分
-- 加減乗算混合モデル(30 epoch): 約9時間
+- 加減乗算混合モデル(30 epoch): 約12時間
 
 ## Observed failure patterns during development
 
