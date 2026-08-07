@@ -91,7 +91,7 @@ with open('train_add_sub.txt', 'r', encoding='utf-8') as f1, \
     outfile.write(f2.read())
 
 #################################################################################
-errors_flag = False
+errors_flag = True
 # errors.txtからテストデータを作成するスクリプト
 from minigpt.utils import extract_errors
 

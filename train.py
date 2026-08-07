@@ -22,22 +22,25 @@ device = get_device()
 
 # ===== ハイパーパラメータ =====
 learning_rate = 1e-4    # 1e-4 -> 1e-5
-num_epochs = 30     # 10 -> 10 -> 10 -> 1
+num_epochs = 1     # 10 -> 10 -> 10 -> 1
 
 # ===== データ準備 =====
 dataset = GPTDataset(raw_text, tokenizer)
+pin_memory = (device.type == "cuda")
 dataloader = DataLoader(
     dataset,
-    batch_size=4,
+    batch_size=8,   # 4 -> 8
     shuffle=True,
     drop_last=True,
-    #num_workers=0
+    num_workers=0,  # 0 -> 2
+    pin_memory=pin_memory,
 )
 
 # ===== モデル =====
 model = GPT(GPT_CONFIG)
 
 pretrained_path = None
+#pretrained_path = 'minigpt/model_mix_256_4_ep30_v1_retrain2.pt'
 #pretrained_path = "minigpt/model_mix_256_4_ep10.pt"
 #pretrained_path = "minigpt/model_mix_256_4_ep20.pt"
 #pretrained_path = "minigpt/model_mix_256_4_ep30.pt"
@@ -65,7 +68,8 @@ for epoch in range(num_epochs):
     epoch_loss = 0.0
 
     for batch_x, batch_y in dataloader:
-        batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+        #batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+        batch_x, batch_y = batch_x.to(device, non_blocking=True), batch_y.to(device, non_blocking=True)
         # 予測と損失計算
         logits = model(batch_x)
         # 形状変換
@@ -114,5 +118,5 @@ plt.show()
 #model_save_path = 'minigpt/model_mix_256_4_ep30_retrain.pt'
 #model_save_path = 'minigpt/model_mix_256_4_ep30_retrain2.pt' # 
 # 　　　　　　　　　=> 正答率100%になったので、model_mix_256_4_100.ptに名称変更
-model_save_path = 'minigpt/model_mix_256_4_ep30_v1.pt'
+model_save_path = 'minigpt/model_mix_256_4_ep1_v2.pt'
 torch.save(model.state_dict(), model_save_path)

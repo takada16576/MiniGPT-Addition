@@ -17,6 +17,7 @@ sys.path.append('.')
 
 #model_save_path = 'minigpt/model_mix_256_4_ep30_retrain2.pt'
 model_save_path = 'minigpt/model_mix_256_4_100.pt'
+#model_save_path = 'minigpt/model_mix_256_4_ep30_v1_retrain3.pt'
 
 device = get_device()
 max_new_tokens = 5  # 4 -> 5

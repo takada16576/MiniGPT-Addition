@@ -37,9 +37,9 @@ raw_text = random.sample(train_text, total)
 
 errors_flag = False
 if errors_flag:
-    with open("data/train_mix_errors.txt", "r", encoding="utf-8") as f:
-        raw_text += [line.rstrip("\n") for line in f]
-    with open("data/train_mix_errors_26.txt", "r", encoding="utf-8") as f:
+    #with open("data/train_mix_errors.txt", "r", encoding="utf-8") as f:
+    #    raw_text += [line.rstrip("\n") for line in f]
+    with open("data/train_mul_errors.txt", "r", encoding="utf-8") as f:
         raw_text += [line.rstrip("\n") for line in f]
 
 random.shuffle(raw_text)
