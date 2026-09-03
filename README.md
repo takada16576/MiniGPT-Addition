@@ -1,22 +1,34 @@
 # MiniGPT Addition
 
-> このプロジェクトはGPTの学習を目的とした教育・実験用実装です。
+> このプロジェクトはGPTの学習を目的とした教育・実験用実装です。  
 > Transformerの仕組みを理解することを重視しています。
 
 ## Results
 
-2桁整数演算 — Chain of Thought
-Operation	Accuracy
-Addition	100.00%
-Subtraction	100.00%
-Multiplication	100.00%
+### 2桁整数演算 — Chain of Thought
 
-2桁整数 [-99, 99] の加算・減算・乗算について、Chain of Thought（CoT）形式による学習を行い、全問正解を達成しました。
+| Operation | Accuracy |
+|---|---:|
+| Addition | 100.00% |
+| Subtraction | 100.00% |
+| Multiplication | 100.00% |
+
+2桁整数 `[-99, 99]` の加算・減算・乗算について、Chain of Thought（CoT）形式による学習を行い、全問正解を達成しました。
+
+評価対象は、
+
+- 39,601通りの整数ペア
+- 3種類の演算（加算・減算・乗算）
+- 合計118,803問題
+
+です。
 
 ## プロジェクトの目的
 
-本プロジェクトは、GPTの仕組みを理解することを目的として、PyTorchのみを用いて小規模なGPTを実装したものです。
+本プロジェクトは、GPTの仕組みを理解することを目的として、PyTorchを用いて小規模なGPTを実装したものです。
+
 2桁整数の足し算・引き算・掛け算を題材として、通常の直接回答だけでなく、計算途中のステップを生成させるChain of Thought（CoT）形式について実験しています。
+
 最終的には、モデル自身に計算手順を生成させ、その結果から正しい演算結果を導くことを目指しています。
 
 ## 特徴
@@ -35,7 +47,9 @@ Multiplication	100.00%
 
 通常の演算では、
 
+```text
 +0034*+0067=+0002278
+```
 
 のように、入力から直接答えを生成します。
 
@@ -43,14 +57,16 @@ CoT版では、計算途中のステップを含む形式にしています。
 
 例えば、
 
+```text
 +0034*+0067=+0034*+0007=+000000238|+0034*+0060=+000002040|+0238++2040=+000002278|+000002278
+```
 
 のように、
 
-1の位との乗算
-10の位との乗算
-部分積の加算
-最終結果
+1. 1の位との乗算
+2. 10の位との乗算
+3. 部分積の加算
+4. 最終結果
 
 という計算手順をモデルに学習させます。
 
@@ -58,118 +74,184 @@ CoT版では、計算途中のステップを含む形式にしています。
 
 ## データセット
 
-2桁整数の範囲は [-99, 99] です。
+2桁整数の範囲は `[-99, 99]` です。
 
-整数の組み合わせは、
+整数の種類は199個なので、整数ペアの組み合わせは、
 
-199 × 199 = 39,601 通りです。
+```text
+199 × 199 = 39,601
+```
+
+通りです。
 
 加算・減算・乗算の3種類を使用するため、評価対象は、
 
-39,601 × 3 = 118,803 問題です。
+```text
+39,601 × 3 = 118,803
+```
+
+問題です。
 
 ## CoTデータ生成
 
-1桁演算用：
+### 1桁演算用
 
+```bash
 python make_dataset_1dig_cot.py
+```
 
-2桁演算用：
+### 2桁演算用
 
+```bash
 python make_dataset_2dig_cot.py
-
+```
 
 ## 学習
 
-CoT用の学習プログラムは train_cot.py です。
+CoT用の学習プログラムは `train_cot.py` です。
 
+```bash
 python train_cot.py
+```
 
 CoT形式では計算途中のステップを生成するため、通常の演算形式よりも必要なコンテキスト長が大きくなります。
 
-## Model configuration
+## Model Configuration
 
 現在のモデルは以下の設定を使用しています。
 
+```python
 GPT_CONFIG = {
     "vocab_size": 15,
     "context_length": 102,
     "embed_dim": 256,
     "n_heads": 4,
 }
+```
 
 ## 学習済みモデル
 
 2桁整数の加算・減算・乗算をCoT形式で学習したモデル：
 
+```text
 minigpt/model_mix_2dig_cot_100.pt
+```
 
 このモデルでは、2桁演算の全評価問題について100%の正解率を達成しています。
 
 ## 評価
 
 ### サンプル評価
+
+```bash
 python test_eval_mix_2dig_cot_sample.py
+```
 
 ### 全問評価
+
+```bash
 python test_eval_mix_2dig_cot_full.py
+```
 
 評価対象：
 
-Addition       : 39,601
-Subtraction    : 39,601
-Multiplication : 39,601
---------------------------------
-Total          : 118,803
+| Operation | Problems |
+|---|---:|
+| Addition | 39,601 |
+| Subtraction | 39,601 |
+| Multiplication | 39,601 |
+| **Total** | **118,803** |
 
 最終結果：
 
-Operation	Accuracy
-Addition	100.00%
-Subtraction	100.00%
-Multiplication	100.00%
-Total: 118,803 / 118,803 correct (100.00%)
+| Operation | Accuracy |
+|---|---:|
+| Addition | 100.00% |
+| Subtraction | 100.00% |
+| Multiplication | 100.00% |
+
+**Total: 118,803 / 118,803 correct (100.00%)**
 
 ## 推論
+
+```bash
 python inference.py
+```
+
+`inference.py` を実行すると、2桁整数の加算・減算・乗算を入力してモデルの出力を確認できます。
 
 ## 実行例
-python inference.py 
 
 ### 2桁整数の加算
-#### 入力
+
+**入力**
+
+```text
 03+58
-#### 出力
+```
+
+**出力**
+
+```text
 03+58=+0061
+```
 
 ### 2桁整数の減算
-#### 入力
+
+**入力**
+
+```text
 30-50
-#### 出力
+```
+
+**出力**
+
+```text
 30-50=-0020
+```
 
 ### 2桁整数の乗算
-#### 入力
-30*50
-#### 出力
-30*50=+1500
 
-inference.py が = を自動的に付加します。
+**入力**
+
+```text
+30*50
+```
+
+**出力**
+
+```text
+30*50=+1500
+```
+
+`inference.py` が `=` を自動的に付加します。
 
 ## 開発環境
-Python 3.11
-PyTorch
+
+- Python 3.11
+- PyTorch
 
 ## 事前準備（環境構築）
+
+```bash
 pip install -r requirements.txt
-Mac
+```
+
+### Mac
+
+```bash
 pip install torch torchvision torchaudio
-Windows CUDA
+```
+
+### Windows CUDA
+
+```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
 
-プロジェクト構成
+## プロジェクト構成
 
-## 現在の主要ファイル：
+### 現在の主要ファイル
 
 ```text
 MiniGPT-Addition/
@@ -188,30 +270,35 @@ MiniGPT-Addition/
 │   ├── utils.py
 │   └── model_mix_2dig_cot_100.pt
 └── README.md
+```
 
-## Observed failure patterns during development
+## 開発途中で確認された失敗パターン
 
 開発途中では、以下のようなエラーが確認されました。
 
-結果が +1 / -1 付近になる場合の符号反転
-繰り上がりが発生する計算での誤り
-乗算における特定の値付近での誤り
-CoT形式に変更した際のコンテキスト長不足
-計算途中のステップは正しいものの、最終結果だけが誤るケース
+- 結果が `+1` / `-1` 付近になる場合の符号反転
+- 繰り上がりが発生する計算での誤り
+- 乗算における特定の値付近での誤り
+- CoT形式に変更した際のコンテキスト長不足
+- 計算途中のステップは正しいものの、最終結果だけが誤るケース
 
 CoT学習では、学習エポック数の増加に伴って乗算の正解率が大きく向上しました。
 
 ## ステータス
-現在
-2桁CoT演算モデル完成
 
-2桁加算：100%
-2桁減算：100%
-2桁乗算：100%
-全118,803問題で正解
-CoT形式による計算手順の生成を実現
+現在、
+
+- 2桁CoT演算モデル完成
+- 2桁加算：100%
+- 2桁減算：100%
+- 2桁乗算：100%
+- 全118,803問題で正解
+- CoT形式による計算手順の生成を実現
+
+という状態です。
 
 ## 開発の流れ
+
 ```text
 1桁演算
    ↓
@@ -226,16 +313,18 @@ Chain of Thought（CoT）導入
 2桁CoT演算 100%
    ↓
 3桁CoT演算 ← 次の目標
+```
 
 今後は、2桁CoTで得られたモデルと学習方法をベースとして、3桁整数の演算へ拡張する予定です。
 
 ## 学習時間の目安
 
 参考環境：
-Windows 11
-Intel Core i7-8700
-NVIDIA GeForce GTX 1660 Ti 6GB
-RAM 16GB
+
+- Windows 11
+- Intel Core i7-8700
+- NVIDIA GeForce GTX 1660 Ti 6GB
+- RAM 16GB
 
 また、MacBook Air M4でも学習・評価を行っています。
 
