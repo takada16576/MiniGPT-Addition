@@ -122,10 +122,12 @@ CoT形式では計算途中のステップを生成するため、通常の演�
 
 ```python
 GPT_CONFIG = {
-    "vocab_size": 15,
-    "context_length": 102,
+    "vocab_size": 16,
+    "context_length": 91,
     "embed_dim": 256,
     "n_heads": 4,
+    "n_layers": 12,
+    "dropout_rate": 0.1,
 }
 ```
 
