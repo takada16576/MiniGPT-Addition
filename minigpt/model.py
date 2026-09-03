@@ -334,8 +334,8 @@ class TransformerBlock(nn.Module):
 
 #--------------------------------------------------
 GPT_CONFIG = {
-    "vocab_size": 15,       # vocab_size = len(all_words)
-    "context_length": 13,   # "12+34=046"の時は9、"+12++34=+046"の時は12、"+12*+34=+0408"の時は13
+    "vocab_size": 16,       # vocab_size = len(all_words)
+    "context_length": 91,   # cotの時は91、"12+34=046"の時は9、"+12++34=+046"の時は12、"+12*+34=+0408"の時は13, "+0012*+0034=+000000408"の時は22
     "embed_dim": 256,       # 32 -> 64 -> 96 -> 128 -> 192 -> 256
     "n_heads": 4,           # 2 -> 1 -> 3
     "n_layers": 12,

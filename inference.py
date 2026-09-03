@@ -15,9 +15,11 @@ import os, sys
 #os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append('.')
 
-model_save_path = 'minigpt/model_mix_256_4_100.pt'
+model_save_path = 'minigpt/model_mix_2dig_cot_ep10.pt'
 device = get_device()
-max_new_tokens = 5  # 4 -> 5
+#max_new_tokens = 7  # 4 -> 5 -> 7
+#max_new_tokens = 79     # 91-12=79
+max_new_tokens = 90     # 102-12=90
 
 # モデルとトークナイザ
 model = GPT(GPT_CONFIG).to(device)

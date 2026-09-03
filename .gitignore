@@ -10,7 +10,7 @@ venv/
 *.png
 
 minigpt/*.pt
-!minigpt/model_mix_256_4_100.pt
+!minigpt/model_mix_2dig_cot_100.pt
 data/*.txt
 !data/.gitkeep
 
@@ -20,7 +20,8 @@ data/*.txt
 .DS_Store
 
 test_*.py
-!test_eval_add_sub_mul.py
+!test_eval_mix_2dig_cot_sample.py
+!test_eval_mix_2dig_cot_full.py
 train_*.txt
 
 *_errors.txt

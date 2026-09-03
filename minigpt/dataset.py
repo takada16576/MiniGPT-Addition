@@ -6,20 +6,6 @@ import os, sys
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append('.')
 
-#with open("data/train_add.txt", "r", encoding="utf-8") as f:
-#with open("data/train_sub.txt", "r", encoding="utf-8") as f:
-#with open("data/train_add_sub.txt", "r", encoding="utf-8") as f:
-#with open("data/train_add_sub_mul.txt", "r", encoding="utf-8") as f:
-
-#with open("data/train_mul.txt", "r", encoding="utf-8") as f:
-#    raw_text = []
-#    #total = 9000*2
-#    #total = 199 * 199
-#    total = 5000
-#    for _ in range(total):
-#        temp = f.readline()
-#        raw_text.append(temp[:-1])
-
 import random
 
 random.seed(0)
@@ -27,19 +13,22 @@ random.seed(0)
 #random.seed(2)
 #random.seed(3)
 
-with open("data/train_mix.txt", "r", encoding="utf-8") as f:
+with open("data/train_mix_1dig_cot.txt", "r", encoding="utf-8") as f:
     train_text = [line.rstrip("\n") for line in f]
-
-total = 199*199*3
-#total = 5000
-
+total = 19*19*3  # 1,083
 raw_text = random.sample(train_text, total)
+
+with open("data/train_mix_2dig_cot.txt", "r", encoding="utf-8") as f:
+    train_text = [line.rstrip("\n") for line in f]
+total = 199*199*3 - 10000  # 118,803 - 10,000
+raw_text += random.sample(train_text, total)
 
 errors_flag = False
 if errors_flag:
-    #with open("data/train_mix_errors.txt", "r", encoding="utf-8") as f:
+    #with open("data/train_mix_aux_cot.txt", "r", encoding="utf-8") as f:
     #    raw_text += [line.rstrip("\n") for line in f]
-    with open("data/train_mul_errors.txt", "r", encoding="utf-8") as f:
+
+    with open("data/train_mix_errors.txt", "r", encoding="utf-8") as f:
         raw_text += [line.rstrip("\n") for line in f]
 
 random.shuffle(raw_text)
@@ -63,3 +52,25 @@ class GPTDataset(Dataset):
     
     def __getitem__(self, idx):
         return self.data[idx]
+
+
+from torch.nn.utils.rnn import pad_sequence
+
+PAD_ID = 0
+
+def collate_fn(batch):
+    xs, ys = zip(*batch)
+
+    xs = pad_sequence(
+        xs,
+        batch_first=True,
+        padding_value=PAD_ID
+    )
+
+    ys = pad_sequence(
+        ys,
+        batch_first=True,
+        padding_value=-100
+    )
+
+    return xs, ys
