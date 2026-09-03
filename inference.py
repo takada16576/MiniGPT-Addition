@@ -15,11 +15,11 @@ import os, sys
 #os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append('.')
 
-model_save_path = 'minigpt/model_mix_2dig_cot_ep10.pt'
+model_save_path = 'minigpt/model_mix_2dig_cot_100.pt'
 device = get_device()
 #max_new_tokens = 7  # 4 -> 5 -> 7
-#max_new_tokens = 79     # 91-12=79
-max_new_tokens = 90     # 102-12=90
+max_new_tokens = 79     # 91-12=79
+#max_new_tokens = 90     # 102-12=90
 
 # モデルとトークナイザ
 model = GPT(GPT_CONFIG).to(device)
@@ -57,8 +57,11 @@ while True:
     )
     if generated_text == None:
         continue
-    _, right = generated_text.split('=')
-    output = f"{inputs}={right}" 
+
+    #_, right = generated_text.split('=')
+    parts = generated_text.split("|")
+    right = parts[-1]
+    output = f"{inputs}={int(right):+05d}" 
     
     print(f"Output: {output}")
     #print(f"Output: {generated_text}")

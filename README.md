@@ -5,205 +5,240 @@
 
 ## Results
 
-| Operation      | Accuracy  |
-|----------------|----------:|
-| Addition       | 100.00%   |
-| Subtraction    | 100.00%   |
-| Multiplication | 100.00%   |
+2桁整数演算 — Chain of Thought
+Operation	Accuracy
+Addition	100.00%
+Subtraction	100.00%
+Multiplication	100.00%
 
-Total: 118,803 / 118,803 correct (100.00%)
+2桁整数 [-99, 99] の加算・減算・乗算について、Chain of Thought（CoT）形式による学習を行い、全問正解を達成しました。
 
 ## プロジェクトの目的
 
-本プロジェクトは、GPTの仕組みを理解することを目的として、PyTorchのみを用いて「2桁整数の足し算と引き算と掛け算」を学習する小規模なGPTを実装したものです。
+本プロジェクトは、GPTの仕組みを理解することを目的として、PyTorchのみを用いて小規模なGPTを実装したものです。
+2桁整数の足し算・引き算・掛け算を題材として、通常の直接回答だけでなく、計算途中のステップを生成させるChain of Thought（CoT）形式について実験しています。
+最終的には、モデル自身に計算手順を生成させ、その結果から正しい演算結果を導くことを目指しています。
 
 ## 特徴
 
 - シンプルなGPTの実装（マルチヘッドAttention）
 - 文字単位のトークナイザー
 - Transformerデコーダー
-- 加減乗算データセットでの学習
+- 加算・減算・乗算データセット
 - 貪欲法（Greedy Decoding）によるテキスト生成
-- 加減乗算モデルからContinue Pretrainingを行い、補正データを追加学習
+- Chain of Thought（CoT）形式による演算
+- CoTによる計算ステップの学習
+- 学習済みモデルを利用したContinue Pretraining
+- 全39,601通りの2桁整数ペアによる演算評価
 
+## Chain of Thought
 
-## 学習手順
+通常の演算では、
 
-1. 加減乗算の学習データをまとめて混合データを作成
-    make_dataset.pyで、"errors_flag = False"にする
-    minigpt/dataset.pyで、datasetをtotal=199*199*3で生成。"errors_flag = False"にする
-2. 混合データ(train_mix.txt)を30epochで学習(train.py)
-　　# ===== ハイパーパラメータ =====
-    learning_rate = 1e-4
-    num_epochs = 30
-3. モデルを評価して加減乗算のエラー抽出(test_add_sub_mul.py)
-4. エラー補正データを作成
-　　make_dataset.pyで、"errors_flag = True"にする
-5. エラー補正データ(train_mix_errors.txt)を1epochで再学習
-    minigpt/dataset.pyで、datasetをtotal=5000で生成。"errors_flag = True"にする
-    train.pyで、Continue pretraining
-　　# ===== ハイパーパラメータ =====
-    learning_rate = 1e-5
-    num_epochs = 1
-6. モデルを評価して乗算エラー抽出(test_add_sub_mul.py)
-7. 乗算エラー補正データを作成
-    make_dataset.pyで、"errors_flag = True"にする
-8. 乗算エラー補正データ(train_mix_errors.txt)を1epochで再学習
-    minigpt/dataset.pyで、datasetをtotal=5000で生成。"errors_flag = True"にする
-    train.pyで、Continue pretraining
-　　# ===== ハイパーパラメータ =====
-    learning_rate = 1e-5
-    num_epochs = 1
-9. モデルを評価して正解率100%(エラー0)を確認(test_add_sub_mul.py)
-  % python test_eval_add_sub_mul.py
-  Addition   : 100.00%
-  Add Errors : 0
-  Add Numeric Errors : 0
-  Add Format Errors : 0
-  Subtraction   : 100.00%
-  Sub Errors : 0
-  Sub Numeric Errors : 0
-  Sub Format Errors : 0
-  Multiplication   : 100.00%
-  Mul Errors : 0
-  Mul Numeric Errors : 0
-  Mul Format Errors : 0
++0034*+0067=+0002278
 
+のように、入力から直接答えを生成します。
 
-## Model configuration
+CoT版では、計算途中のステップを含む形式にしています。
 
-```python
-GPT_CONFIG = {
-    "vocab_size": 15,
-    "context_length": 12,
-    "embed_dim": 256,
-    "n_heads": 4,
-}
-```
+例えば、
 
-## Full evaluation
++0034*+0067=+0034*+0007=+000000238|+0034*+0060=+000002040|+0238++2040=+000002278|+000002278
 
-A tiny GPT model that learns
-addition, subtraction, and multiplication
-for all integer pairs in [-99, 99].
+のように、
 
-Final evaluation:
+1の位との乗算
+10の位との乗算
+部分積の加算
+最終結果
 
-| Operation      | Accuracy  |
-|----------------|----------:|
-| Addition       | 100.00%   |
-| Subtraction    | 100.00%   |
-| Multiplication | 100.00%   |
+という計算手順をモデルに学習させます。
 
-Total: 118,803 / 118,803 correct (100.00%)
+この形式によって、単純に答えを暗記させるのではなく、演算の途中経過を生成する能力について実験しています。
 
+## データセット
 
-## Observed failure patterns
+2桁整数の範囲は [-99, 99] です。
 
-- Sign inversion when the result magnitude is very small (especially ±1)
-- Errors involving carry into the hundreds place (e.g. 103 → 093)
+整数の組み合わせは、
 
+199 × 199 = 39,601 通りです。
 
-## 実行例(2桁整数の加算)
-**入力**
-```
-03+58
-```
-**出力**
-```
-03+58=+0061
-```
+加算・減算・乗算の3種類を使用するため、評価対象は、
 
-## 実行例(2桁整数の減算)
-**入力**
-```
-30-50
-```
-**出力**
-```
-30-50=-0020
-```
+39,601 × 3 = 118,803 問題です。
 
-## 実行例(2桁整数の乗算)
-**入力**
-```
-30*50
-```
-**出力**
-```
-30*50=+1500
-```
+## CoTデータ生成
 
-（inference.py が '=' を自動で付けています）
+1桁演算用：
 
+python make_dataset_1dig_cot.py
 
-## 開発環境
+2桁演算用：
 
-- Python 3.11
-- PyTorch
+python make_dataset_2dig_cot.py
 
-
-## 事前準備(環境構築手順)
-
-```bash
-pip install -r requirements.txt
-```
-
-Macの場合
-```bash
-pip install torch torchvision torchaudio
-```
-
-Windows CUDAの場合
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-```
 
 ## 学習
 
-まず、学習データを生成します。
+CoT用の学習プログラムは train_cot.py です。
 
-```bash
-python make_dataset.py
-```
+python train_cot.py
 
-生成された `train_mix.txt` を `data` ディレクトリに配置します。
+CoT形式では計算途中のステップを生成するため、通常の演算形式よりも必要なコンテキスト長が大きくなります。
 
-その後、学習を開始します。（詳細は学習手順を参照）
+## Model configuration
 
-```bash
-python train.py
-```
+現在のモデルは以下の設定を使用しています。
 
-## 推論
+GPT_CONFIG = {
+    "vocab_size": 15,
+    "context_length": 102,
+    "embed_dim": 256,
+    "n_heads": 4,
+}
 
-```bash
-python inference.py
-```
+## 学習済みモデル
+
+2桁整数の加算・減算・乗算をCoT形式で学習したモデル：
+
+minigpt/model_mix_2dig_cot_100.pt
+
+このモデルでは、2桁演算の全評価問題について100%の正解率を達成しています。
 
 ## 評価
 
-```bash
-python test_eval_add_sub_mul.py
-```
+### サンプル評価
+python test_eval_mix_2dig_cot_sample.py
 
-## ステータス
+### 全問評価
+python test_eval_mix_2dig_cot_full.py
 
-⚠️ 本プロジェクトは現在活発に開発中です。
+評価対象：
 
-最初のリリース（v0.1.0）は実験的な実装です。
-- v0.1.0では２桁加減乗算(-99～99)で全問正解を達成。
-- 今後は3桁演算やモデル分析を進める予定。
+Addition       : 39,601
+Subtraction    : 39,601
+Multiplication : 39,601
+--------------------------------
+Total          : 118,803
 
-## 学習時間の目安
+最終結果：
 
-参考環境（Windows 11 / GTX 1660 Ti）
+Operation	Accuracy
+Addition	100.00%
+Subtraction	100.00%
+Multiplication	100.00%
+Total: 118,803 / 118,803 correct (100.00%)
 
-- 加算モデル: 約46分
-- 加減乗算混合モデル(30 epoch): 約12時間
+## 推論
+python inference.py
+
+## 実行例
+python inference.py 
+
+### 2桁整数の加算
+#### 入力
+03+58
+#### 出力
+03+58=+0061
+
+### 2桁整数の減算
+#### 入力
+30-50
+#### 出力
+30-50=-0020
+
+### 2桁整数の乗算
+#### 入力
+30*50
+#### 出力
+30*50=+1500
+
+inference.py が = を自動的に付加します。
+
+## 開発環境
+Python 3.11
+PyTorch
+
+## 事前準備（環境構築）
+pip install -r requirements.txt
+Mac
+pip install torch torchvision torchaudio
+Windows CUDA
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+プロジェクト構成
+
+## 現在の主要ファイル：
+
+MiniGPT-Addition/
+├── inference.py
+├── make_dataset_1dig_cot.py
+├── make_dataset_2dig_cot.py
+├── train_cot.py
+├── test_eval_mix_2dig_cot_full.py
+├── test_eval_mix_2dig_cot_sample.py
+├── test_mix_2dig_cot.txt
+├── minigpt/
+│   ├── dataset.py
+│   ├── generate.py
+│   ├── model.py
+│   ├── tokenizer.py
+│   ├── utils.py
+│   └── model_mix_2dig_cot_100.pt
+└── README.md
 
 ## Observed failure patterns during development
 
-- Sign inversion when the result magnitude is very small (especially ±1)
-- Errors involving carry into the hundreds place (e.g. 103 → 093)
-- Multiplication errors concentrated at ±20, ±40, ±80, ±100 offsets
+開発途中では、以下のようなエラーが確認されました。
+
+結果が +1 / -1 付近になる場合の符号反転
+繰り上がりが発生する計算での誤り
+乗算における特定の値付近での誤り
+CoT形式に変更した際のコンテキスト長不足
+計算途中のステップは正しいものの、最終結果だけが誤るケース
+
+CoT学習では、学習エポック数の増加に伴って乗算の正解率が大きく向上しました。
+
+## ステータス
+現在
+2桁CoT演算モデル完成
+
+2桁加算：100%
+2桁減算：100%
+2桁乗算：100%
+全118,803問題で正解
+CoT形式による計算手順の生成を実現
+
+## 開発の流れ
+1桁演算
+   ↓
+2桁演算
+   ↓
+2桁加減乗算
+   ↓
+2桁演算 100%
+   ↓
+Chain of Thought（CoT）導入
+   ↓
+2桁CoT演算 100%
+   ↓
+3桁CoT演算 ← 次の目標
+
+今後は、2桁CoTで得られたモデルと学習方法をベースとして、3桁整数の演算へ拡張する予定です。
+
+## 学習時間の目安
+
+参考環境：
+Windows 11
+Intel Core i7-8700
+NVIDIA GeForce GTX 1660 Ti 6GB
+RAM 16GB
+
+また、MacBook Air M4でも学習・評価を行っています。
+
+学習時間は、データセットのサイズ、batch size、モデル設定、epoch数などによって変化します。
+
+## License
+
+教育・実験目的のプロジェクトです。
