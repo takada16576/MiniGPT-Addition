@@ -171,6 +171,7 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 ## 現在の主要ファイル：
 
+```text
 MiniGPT-Addition/
 ├── inference.py
 ├── make_dataset_1dig_cot.py
@@ -211,6 +212,7 @@ CoT学習では、学習エポック数の増加に伴って乗算の正解率�
 CoT形式による計算手順の生成を実現
 
 ## 開発の流れ
+```text
 1桁演算
    ↓
 2桁演算
